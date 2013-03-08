@@ -528,6 +528,7 @@ int main(int argc, char *argv[])
 				return 1;
 		}
 	}
+	opencl_entry_init();
 
 	rc = clGetPlatformIDs(lengthof(platform_ids),
 						  platform_ids,
