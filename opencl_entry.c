@@ -139,3 +139,143 @@ clGetDeviceInfo(cl_device_id device,
 								param_value,
 								param_value_size_ret);
 }
+
+cl_context
+clCreateContext(const cl_context_properties *properties,
+				cl_uint num_devices,
+				const cl_device_id *devices,
+				void (CL_CALLBACK *pfn_notify)(
+					const char *errinfo,
+					const void *private_info,
+					size_t cb,
+					void *user_data),
+				void *user_data,
+				cl_int *errcode_ret)
+{
+	static cl_context (*p_clCreateContext)(
+		const cl_context_properties *properties,
+	    cl_uint num_devices,
+		const cl_device_id *devices,
+		void (CL_CALLBACK *pfn_notify)(
+			const char *errinfo,
+			const void *private_info,
+			size_t cb,
+			void *user_data),
+		void *user_data,
+		cl_int *errcode_ret) = NULL;
+
+	if (!p_clCreateContext)
+		p_clCreateContext = get_opencl_function("clCreateContext");
+
+	return (*p_clCreateContext)(properties,
+								num_devices,
+								devices,
+								pfn_notify,
+								user_data,
+								errcode_ret);
+}
+
+cl_int
+clReleaseContext(cl_context context)
+{
+	static cl_int (*p_clReleaseContext)(cl_context) = NULL;
+
+	if (!p_clReleaseContext)
+		p_clReleaseContext = get_opencl_function("clReleaseContext");
+
+	return (*p_clReleaseContext)(context);
+}
+
+cl_program
+clCreateProgramWithSource(cl_context context,
+						  cl_uint count,
+						  const char **strings,
+						  const size_t *lengths,
+						  cl_int *errcode_ret)
+{
+	static cl_program (*p_clCreateProgramWithSource)(
+		cl_context context,
+		cl_uint count,
+		const char **strings,
+		const size_t *lengths,
+		cl_int *errcode_ret) = NULL;
+
+	if (!p_clCreateProgramWithSource)
+		p_clCreateProgramWithSource
+			= get_opencl_function("clCreateProgramWithSource");
+
+	return (*p_clCreateProgramWithSource)(context,
+										  count,
+										  strings,
+										  lengths,
+										  errcode_ret);
+}
+
+cl_int
+clReleaseProgram(cl_program program)
+{
+	static cl_int (*p_clReleaseProgram)(cl_program program) = NULL;
+
+	if (!p_clReleaseProgram)
+		p_clReleaseProgram = get_opencl_function("clReleaseProgram");
+
+	return (*p_clReleaseProgram)(program);
+}
+
+cl_int
+clBuildProgram(cl_program program,
+               cl_uint num_devices,
+               const cl_device_id *device_list,
+               const char *options,
+               void (CL_CALLBACK *pfn_notify)(
+                   cl_program program,
+                   void *user_data),
+               void *user_data)
+{
+	static cl_int (*p_clBuildProgram)(
+		cl_program program,
+		cl_uint num_devices,
+		const cl_device_id *device_list,
+		const char *options,
+		void (CL_CALLBACK *pfn_notify)(
+			cl_program program,
+			void *user_data),
+		void *user_data) = NULL;
+
+	if (!p_clBuildProgram)
+		p_clBuildProgram = get_opencl_function("clBuildProgram");
+
+	return (*p_clBuildProgram)(program,
+							   num_devices,
+							   device_list,
+							   options,
+							   pfn_notify,
+							   user_data);
+}
+
+cl_int
+clGetProgramBuildInfo(cl_program program,
+                      cl_device_id device,
+                      cl_program_build_info param_name,
+                      size_t param_value_size,
+                      void *param_value,
+                      size_t *param_value_size_ret)
+{
+	static cl_int (*p_clGetProgramBuildInfo)(
+		cl_program program,
+		cl_device_id device,
+		cl_program_build_info param_name,
+		size_t param_value_size,
+		void *param_value,
+		size_t *param_value_size_ret) = NULL;
+
+	if (!p_clGetProgramBuildInfo)
+		p_clGetProgramBuildInfo = get_opencl_function("clGetProgramBuildInfo");
+
+	return (*p_clGetProgramBuildInfo)(program,
+									  device,
+									  param_name,
+									  param_value_size,
+									  param_value,
+									  param_value_size_ret);
+}
