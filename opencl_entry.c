@@ -414,6 +414,19 @@ cl_int clReleaseCommandQueue(cl_command_queue command_queue)
 	return (*p_clReleaseCommandQueue)(command_queue);
 }
 
+cl_int clWaitForEvents(cl_uint num_events,
+					   const cl_event *event_list)
+{
+	static (*p_clWaitForEvents)(
+		cl_uint num_events,
+		const cl_event *event_list) = NULL;
+
+	if (!p_clWaitForEvents)
+		p_clWaitForEvents = get_opencl_function("clWaitForEvents");
+
+	return (*p_clWaitForEvents)(num_events, event_list);
+}
+
 cl_int clFinish(cl_command_queue command_queue)
 {
 	static cl_int (*p_clFinish)(cl_command_queue command_queue) = NULL;
