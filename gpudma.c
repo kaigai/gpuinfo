@@ -26,6 +26,7 @@ static cl_int	device_idx = 1;
 static cl_bool	is_blocking = CL_TRUE;
 static cl_int	num_trial = 100;			/* 100 times */
 static size_t	buffer_size = 128 << 20;	/* 128MB */
+static size_t	chunk_size = 0;
 
 static void
 run_test(const char *namebuf, cl_context context, cl_command_queue cmdq)
@@ -34,10 +35,12 @@ run_test(const char *namebuf, cl_context context, cl_command_queue cmdq)
 	char		   *hmem;
 	cl_mem			dmem;
 	cl_mem			pinned = NULL;
-	cl_int			rc, i, j;
+	cl_int			num_chunks;
+	cl_int			rc, i, j, k;
 	struct timeval	tv1, tv2;
 
-	ev = malloc(sizeof(cl_event) * 2 * num_trial);
+	num_chunks = buffer_size / chunk_size;
+	ev = malloc(sizeof(cl_event) * (num_chunks + 1) * num_trial);
 	if (!ev)
 		error_exit("out of memory (%s)", strerror(rc));
 
@@ -69,21 +72,23 @@ run_test(const char *namebuf, cl_context context, cl_command_queue cmdq)
 					   buffer_size, opencl_strerror(rc));
 	}
 
-	for (i=0, j=0; i < num_trial; i++)
+	for (i=0, k=0; i < num_trial; i++)
 	{
-		rc = clEnqueueWriteBuffer(cmdq,
-								  dmem,
-								  is_blocking,
-								  0,
-								  buffer_size,
-								  hmem,
-								  j > 0 ? 1 : 0,
-								  j > 0 ? ev + j - 1 : NULL,
-								  ev + j);
-		if (rc != CL_SUCCESS)
-			error_exit("failed on clEnqueueWriteBuffer (%s)",
-					   opencl_strerror(rc));
-		j++;
+		for (j=0; j < num_chunks; j++)
+		{
+			rc = clEnqueueWriteBuffer(cmdq,
+									  dmem,
+									  is_blocking,
+									  j * chunk_size,
+									  chunk_size,
+									  hmem + j * chunk_size,
+									  i > 0 ? 1 : 0,
+									  i > 0 ? &ev[k-1] : NULL,
+									  &ev[k+j]);
+			if (rc != CL_SUCCESS)
+				error_exit("failed on clEnqueueWriteBuffer (%s)",
+						   opencl_strerror(rc));
+		}
 
 		rc = clEnqueueReadBuffer(cmdq,
 								 dmem,
@@ -91,13 +96,13 @@ run_test(const char *namebuf, cl_context context, cl_command_queue cmdq)
 								 0,
 								 buffer_size,
 								 hmem,
-								 j > 0 ? 1 : 0,
-								 j > 0 ? ev + j - 1 : NULL,
-								 ev + j);
+								 num_chunks,
+								 &ev[k],
+								 &ev[k+num_chunks]);
 		if (rc != CL_SUCCESS)
 			error_exit("failed on clEnqueueReadBuffer (%s)",
 					   opencl_strerror(rc));
-		j++;
+		k += num_chunks + 1;
 	}
 	rc = clFinish(cmdq);
 	if (rc != CL_SUCCESS)
@@ -108,6 +113,7 @@ run_test(const char *namebuf, cl_context context, cl_command_queue cmdq)
 	printf("DMA send/recv test result\n"
 		   "device:         %s\n"
 		   "size:           %luMB\n"
+		   "chunks:         %lu%s x %d\n"
 		   "ntrials:        %d\n"
 		   "total_size:     %luMB\n"
 		   "time:           %.2fs\n"
@@ -115,6 +121,9 @@ run_test(const char *namebuf, cl_context context, cl_command_queue cmdq)
 		   "mode:           %s\n",
 		   namebuf,
 		   buffer_size >> 20,
+		   chunk_size > (1UL<<20) ? chunk_size >> 20 : chunk_size >> 10,
+		   chunk_size > (1UL<<20) ? "MB" : "KB",
+		   num_chunks,
 		   num_trial,
 		   (buffer_size >> 20) * num_trial,
 		   (double)((tv2.tv_sec * 1000000 + tv2.tv_usec) -
@@ -136,11 +145,12 @@ static void usage(const char *cmdname)
 			"usage: %s [<options> ..]\n"
 			"\n"
 			"options:\n"
-			"  -p <platform index>    (default: 1)\n"
-			"  -d <device index>      (default: 1)\n"
-			"  -m (sync|async)        (default: sync)\n"
-			"  -n <number of trials>  (default: 100)\n"
-			"  -s <size of buffer>    (default: 128 = 128MB)\n",
+			"  -p <platform index>        (default: 1)\n"
+			"  -d <device index>          (default: 1)\n"
+			"  -m (sync|async)            (default: sync)\n"
+			"  -n <number of trials>      (default: 100)\n"
+			"  -s <size of buffer in MB>  (default: 128 = 128MB)\n"
+			"  -c <size of chunks in KB>  (default: buffer size)\n",
 			cmdname);
 	exit(1);
 }
@@ -156,7 +166,7 @@ int main(int argc, char *argv[])
 	cl_int			c, rc;
 	char			namebuf[1024];
 
-	while ((c = getopt(argc, argv, "p:d:m:n:s:")) >= 0)
+	while ((c = getopt(argc, argv, "p:d:m:n:s:c:")) >= 0)
 	{
 		switch (c)
 		{
@@ -180,6 +190,9 @@ int main(int argc, char *argv[])
 			case 's':
 				buffer_size = atoi(optarg) << 20;
 				break;
+			case 'c':
+				chunk_size = atoi(optarg) << 10;
+				break;
 			default:
 				usage(basename(argv[0]));
 				break;
@@ -187,6 +200,14 @@ int main(int argc, char *argv[])
 	}
 	if (optind != argc)
 		usage(basename(argv[0]));
+
+	if (chunk_size == 0)
+		chunk_size = buffer_size;
+	else if (buffer_size % chunk_size != 0 || buffer_size < chunk_size)
+	{
+		fprintf(stderr, "chunk_size (-c) must be aligned to buffer_size\n");
+		return 1;
+	}
 
 	/*
 	 * Initialize OpenCL platform/device
