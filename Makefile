@@ -1,6 +1,7 @@
 all: gpuinfo gpucc gpudma
 
 CFLAGS := -g -O2
+CUDA_DIR := /usr/local/cuda
 
 gpuinfo: gpuinfo.c opencl_entry.c
 	$(CC) $(CFLAGS) $^ -o $@ -ldl
@@ -11,5 +12,8 @@ gpucc: gpucc.c opencl_entry.c
 gpudma: gpudma.c opencl_entry.c
 	$(CC) $(CFLAGS) $^ -o $@ -ldl
 
+cudadma: cudadma.c
+	$(CC) $(CFLAGS) -I$(CUDA_DIR)/include $^ -o $@ -lcuda
+
 clean:
-	rm -f gpuinfo gpucc
+	rm -f gpuinfo gpucc gpudma cudadma
