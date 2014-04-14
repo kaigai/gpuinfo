@@ -1,4 +1,4 @@
-all: memeat gpuinfo gpucc gpudma
+all: memeat gpuinfo gpucc gpudma gpustub cudadma
 
 CFLAGS := -g -O2
 CUDA_DIR := /usr/local/cuda
@@ -10,6 +10,9 @@ gpucc: gpucc.c opencl_entry.c
 	$(CC) $(CFLAGS) $^ -o $@ -ldl
 
 gpudma: gpudma.c opencl_entry.c
+	$(CC) $(CFLAGS) $^ -o $@ -ldl
+
+gpustub: gpustub.c opencl_entry.c
 	$(CC) $(CFLAGS) $^ -o $@ -ldl
 
 cudadma: cudadma.c

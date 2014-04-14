@@ -414,10 +414,108 @@ cl_int clReleaseCommandQueue(cl_command_queue command_queue)
 	return (*p_clReleaseCommandQueue)(command_queue);
 }
 
+cl_kernel clCreateKernel(cl_program  program,
+						 const char *kernel_name,
+						 cl_int *errcode_ret)
+{
+	static cl_kernel (*p_clCreateKernel)(
+		cl_program  program,
+		const char *kernel_name,
+		cl_int *errcode_ret) = NULL;
+
+	if (!p_clCreateKernel)
+		p_clCreateKernel = get_opencl_function("clCreateKernel");
+	return (*p_clCreateKernel)(program, kernel_name, errcode_ret);
+}
+
+cl_int clSetKernelArg(cl_kernel kernel,
+					  cl_uint arg_index,
+					  size_t arg_size,
+					  const void *arg_value)
+{
+	static cl_int (*p_clSetKernelArg)(
+		cl_kernel kernel,
+		cl_uint arg_index,
+		size_t arg_size,
+		const void *arg_value) = NULL;
+
+	if (!p_clSetKernelArg)
+		p_clSetKernelArg = get_opencl_function("clSetKernelArg");
+	return (*p_clSetKernelArg)(kernel, arg_index, arg_size, arg_value);
+}
+
+cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
+							  cl_kernel kernel,
+							  cl_uint work_dim,
+							  const size_t *global_work_offset,
+							  const size_t *global_work_size,
+							  const size_t *local_work_size,
+							  cl_uint num_events_in_wait_list,
+							  const cl_event *event_wait_list,
+							  cl_event *event)
+{
+	static cl_int (*p_clEnqueueNDRangeKernel)(
+		cl_command_queue command_queue,
+		cl_kernel kernel,
+		cl_uint work_dim,
+		const size_t *global_work_offset,
+		const size_t *global_work_size,
+		const size_t *local_work_size,
+		cl_uint num_events_in_wait_list,
+		const cl_event *event_wait_list,
+		cl_event *event) = NULL;
+
+	if (!p_clEnqueueNDRangeKernel)
+		p_clEnqueueNDRangeKernel
+			= get_opencl_function("clEnqueueNDRangeKernel");
+
+	return (*p_clEnqueueNDRangeKernel)(command_queue,
+									   kernel,
+									   work_dim,
+									   global_work_offset,
+									   global_work_size,
+									   local_work_size,
+									   num_events_in_wait_list,
+									   event_wait_list,
+									   event);
+}
+
+cl_int clReleaseKernel(cl_kernel kernel)
+{
+	static cl_int (*p_clReleaseKernel)(cl_kernel kernel) = NULL;
+
+	if (!p_clReleaseKernel)
+		p_clReleaseKernel = get_opencl_function("clReleaseKernel");
+	return (*p_clReleaseKernel)(kernel);
+}
+
+cl_int clSetEventCallback(cl_event event,
+						  cl_int  command_exec_callback_type ,
+						  void (CL_CALLBACK  *pfn_event_notify)(
+							  cl_event event,
+							  cl_int event_command_exec_status,
+							  void *user_data),
+						   void *user_data)
+{
+	static (*p_clSetEventCallback)(
+		cl_event event,
+		cl_int  command_exec_callback_type ,
+		void (CL_CALLBACK  *pfn_event_notify)(
+			cl_event event,
+			cl_int event_command_exec_status,
+			void *user_data),
+		void *user_data) = NULL;
+
+	if (!p_clSetEventCallback)
+		p_clSetEventCallback = get_opencl_function("clSetEventCallback");
+	return (*p_clSetEventCallback)(event, command_exec_callback_type,
+								   pfn_event_notify, user_data);
+}
+
 cl_int clWaitForEvents(cl_uint num_events,
 					   const cl_event *event_list)
 {
-	static (*p_clWaitForEvents)(
+	static cl_int (*p_clWaitForEvents)(
 		cl_uint num_events,
 		const cl_event *event_list) = NULL;
 
@@ -425,6 +523,15 @@ cl_int clWaitForEvents(cl_uint num_events,
 		p_clWaitForEvents = get_opencl_function("clWaitForEvents");
 
 	return (*p_clWaitForEvents)(num_events, event_list);
+}
+
+cl_int clReleaseEvent(cl_event event)
+{
+	static cl_int (*p_clReleaseEvent)(
+		cl_event event) = NULL;
+	if (!p_clReleaseEvent)
+		p_clReleaseEvent = get_opencl_function("clReleaseEvent");
+	return (*p_clReleaseEvent)(event);
 }
 
 cl_int clFinish(cl_command_queue command_queue)
