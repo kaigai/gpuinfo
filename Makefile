@@ -1,7 +1,11 @@
-all: memeat gpuinfo gpucc gpudma
+MODULES = gputest
+EXTRA_CLEAN = gpuinfo gpucc gpudma memeat
 
-CFLAGS := -g -O2
-CUDA_DIR := /usr/local/cuda
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+
+misc: $(EXTRA_CLEAN)
 
 gpuinfo: gpuinfo.c opencl_entry.c
 	$(CC) $(CFLAGS) $^ -o $@ -ldl
@@ -17,6 +21,3 @@ cudadma: cudadma.c
 
 memeat: memeat.c
 	$(CC) $(CFLAGS) $^ -o $@
-
-clean:
-	rm -f gpuinfo gpucc gpudma cudadma memeat
