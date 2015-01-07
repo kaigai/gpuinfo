@@ -1,5 +1,8 @@
-MODULES = gputest
+MODULE_big = gputest
+OBJS = gputest.o
 EXTRA_CLEAN = gpuinfo gpucc gpudma memeat
+PG_CPPFLAGS := -I/usr/local/cuda/include
+SHLIB_LINK := -L/usr/local/cuda/lib64 -lcuda
 
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
