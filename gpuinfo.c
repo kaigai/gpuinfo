@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <libgen.h>
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 
@@ -117,11 +118,11 @@ static const char *dev_fp_config_str(cl_device_fp_config conf)
 static const char *
 dev_execution_capabilities_str(cl_device_exec_capabilities caps)
 {
-	return (caps & CL_EXEC_KERNEL != 0
-			? (caps & CL_EXEC_NATIVE_KERNEL != 0
+	return ((caps & CL_EXEC_KERNEL) != 0
+			? ((caps & CL_EXEC_NATIVE_KERNEL) != 0
 			   ? "kernel, native kernel"
 			   : "kernel")
-			: (caps & CL_EXEC_NATIVE_KERNEL != 0
+			: ((caps & CL_EXEC_NATIVE_KERNEL) != 0
 			   ? "native kernel"
 			   : "none"));
 }
@@ -344,9 +345,9 @@ static void dump_device(int index, cl_device_id device_id)
 			   dinfo.global_mem_cache_size / 1024);
 		printf("  Global memory cache type:        %s\n",
 			   dev_mem_cache_type_str(dinfo.global_mem_cache_type));
-		printf("  Global memory cacheline size:    %lu\n",
+		printf("  Global memory cacheline size:    %u\n",
 			   dinfo.global_mem_cacheline_size);
-		printf("  Global memory size:              %lu MB\n",
+		printf("  Global memory size:              %zu MB\n",
 			   dinfo.global_mem_size / (1024 * 1024));
 		if (strstr(dinfo.extensions, "cl_khr_fp16") != NULL)
 			printf("  Half FP config:                  %s\n",
@@ -372,19 +373,19 @@ static void dump_device(int index, cl_device_id device_id)
 			   dinfo.max_compute_units);
 		printf("  Max constant args:               %u\n",
 			   dinfo.max_constant_args);
-		printf("  Max constant buffer size:        %u\n",
+		printf("  Max constant buffer size:        %zu\n",
 			   dinfo.max_constant_buffer_size);
-		printf("  Max memory allocation size:      %lu MB\n",
+		printf("  Max memory allocation size:      %zu MB\n",
 			   dinfo.max_mem_alloc_size / (1024 * 1024));
-		printf("  Max parameter size:              %lu\n",
+		printf("  Max parameter size:              %zu\n",
 			   (cl_ulong)dinfo.max_parameter_size);
 		printf("  Max read image args:             %u\n",
 			   dinfo.max_read_image_args);
 		printf("  Max samplers:                    %u\n",
 			   dinfo.max_samplers);
-		printf("  Max work-group size:             %lu\n",
+		printf("  Max work-group size:             %zu\n",
 			   (cl_ulong)dinfo.max_work_group_size);
-		printf("  Max work-item sizes:             {%lu,%lu,%lu}\n",
+		printf("  Max work-item sizes:             {%u,%u,%u}\n",
 			   (cl_uint) dinfo.max_work_item_sizes[0],
 			   (cl_uint) dinfo.max_work_item_sizes[1],
 			   (cl_uint) dinfo.max_work_item_sizes[2]);
@@ -450,7 +451,7 @@ static void dump_platform(int index, cl_platform_id platform_id)
         PLATFORM_ATTR(CL_PLATFORM_EXTENSIONS, extensions),
 	};
 	cl_device_id	device_ids[256];
-	cl_int			device_num;
+	cl_uint			device_num;
 	cl_int			i, rc;
 
 	for (i=0; i < lengthof(catalog); i++)
@@ -506,7 +507,7 @@ static void dump_platform(int index, cl_platform_id platform_id)
 int main(int argc, char *argv[])
 {
 	cl_platform_id	platform_ids[32];
-	cl_int			platform_num;
+	cl_uint			platform_num;
 	cl_int			i, c, rc;
 
 	while ((c = getopt(argc, argv, "lp:d:")) != -1)
@@ -529,7 +530,6 @@ int main(int argc, char *argv[])
 				return 1;
 		}
 	}
-	opencl_entry_init();
 
 	rc = clGetPlatformIDs(lengthof(platform_ids),
 						  platform_ids,
